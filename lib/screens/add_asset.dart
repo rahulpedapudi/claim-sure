@@ -1,3 +1,4 @@
+import 'package:claim_sure/services/api_service.dart';
 import 'package:flutter/material.dart';
 
 class AddAssetScreen extends StatefulWidget {
@@ -12,9 +13,11 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _valueController = TextEditingController();
   final TextEditingController _institutionController = TextEditingController();
-  final TextEditingController _accountNumberController = TextEditingController();
+  final TextEditingController _accountNumberController =
+      TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  
+  final TextEditingController _nomineeUserIdController = TextEditingController();
+
   String _selectedAssetType = 'Fixed Deposit';
   final List<String> _assetTypes = [
     'Fixed Deposit',
@@ -26,6 +29,8 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     'Other',
   ];
 
+  bool _isSubmitting = false;
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -33,32 +38,74 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     _institutionController.dispose();
     _accountNumberController.dispose();
     _descriptionController.dispose();
+    _nomineeUserIdController.dispose();
     super.dispose();
   }
 
-  void _saveAsset() {
+  Future<void> _saveAsset() async {
     if (_formKey.currentState!.validate()) {
-      final asset = {
-        'title': _titleController.text,
+      setState(() {
+        _isSubmitting = true;
+      });
+
+      final Map<String, dynamic> assetPayload = {
+        'title': _titleController.text.trim(),
         'type': _selectedAssetType,
-        'value': double.tryParse(_valueController.text) ?? 0.0,
-        'institution': _institutionController.text,
-        'accountNumber': _accountNumberController.text,
-        'description': _descriptionController.text,
-        'createdAt': DateTime.now().toIso8601String(),
+        'value': double.tryParse(_valueController.text.trim()) ?? 0.0,
+        'institution': _institutionController.text.trim(),
+        'accountNumber': _accountNumberController.text.trim(),
+        'description': _descriptionController.text.trim(),
       };
-      
-      Navigator.pop(context, asset);
+
+      final String nomineeUserId = _nomineeUserIdController.text.trim();
+      if (nomineeUserId.isNotEmpty) {
+        assetPayload['nominee_user_id'] = nomineeUserId;
+      }
+
+      try {
+        final result = await ApiService.createAsset(
+          title: assetPayload['title'] as String,
+          type: assetPayload['type'] as String,
+          value: assetPayload['value'] as double,
+          institution: assetPayload['institution'] as String,
+          accountNumber: assetPayload['accountNumber'] as String,
+          description: assetPayload['description'] as String,
+          nomineeUserId: nomineeUserId.isEmpty ? null : nomineeUserId,
+        );
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Asset created successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context, result['data'] ?? assetPayload);
+      } catch (e) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Asset'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Add Asset'), centerTitle: true),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -76,19 +123,19 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 Text(
                   'Secure your financial information for your loved ones',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Asset Title
                 TextFormField(
                   controller: _titleController,
@@ -105,9 +152,9 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Asset Type Dropdown
                 DropdownButtonFormField<String>(
                   value: _selectedAssetType,
@@ -130,9 +177,31 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                     }
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
+                // Nominee User ID (optional)
+                TextFormField(
+                  controller: _nomineeUserIdController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nominee User ID (optional)',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person_add_alt_1_outlined),
+                    hintText: 'Enter nominee user ID if available',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return null;
+                    }
+                    if (value.trim().length < 3) {
+                      return 'Nominee user ID must be at least 3 characters';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
                 // Asset Value
                 TextFormField(
                   controller: _valueController,
@@ -153,9 +222,9 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Institution
                 TextFormField(
                   controller: _institutionController,
@@ -172,9 +241,9 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Account Number
                 TextFormField(
                   controller: _accountNumberController,
@@ -191,9 +260,9 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Description
                 TextFormField(
                   controller: _descriptionController,
@@ -205,29 +274,40 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                     hintText: 'Any additional information about this asset',
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Save Button
                 ElevatedButton(
-                  onPressed: _saveAsset,
+                  onPressed: _isSubmitting ? null : _saveAsset,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Save Asset',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: _isSubmitting
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            SizedBox(width: 12),
+                            Text('Saving asset...'),
+                          ],
+                        )
+                      : const Text(
+                          'Save Asset',
+                          style:
+                              TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Info Box
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -238,11 +318,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.security,
-                        color: Colors.blue[600],
-                        size: 20,
-                      ),
+                      Icon(Icons.security, color: Colors.blue[600], size: 20),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(

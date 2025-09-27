@@ -14,19 +14,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<OnboardingPage> _pages = [
     OnboardingPage(
-      icon: Icons.account_balance_wallet,
-      title: 'One Secure Place',
-      description: 'Bring all your assets—from bank deposits and insurance policies to property and digital wallets—into one consolidated, secure vault.',
+      icon: Icons.account_balance_wallet_outlined,
+      title: 'Centralize every asset',
+      description:
+          'Track fixed deposits, mutual funds, insurance policies, and property in one encrypted vault.',
     ),
     OnboardingPage(
-      icon: Icons.people_alt,
-      title: 'Appoint with Confidence',
-      description: 'Designate trusted nominees who will be securely notified of their role, ensuring they\'re prepared and aware when the time comes.',
+      icon: Icons.handshake_outlined,
+      title: 'Nominate with confidence',
+      description:
+          'Invite your trusted nominees, share relevant documents, and ensure they can act when it matters.',
     ),
     OnboardingPage(
-      icon: Icons.verified_user,
-      title: 'Gain True Peace of Mind',
-      description: 'Rest easy knowing your family\'s future is protected from the stress and financial loss of unclaimed wealth.',
+      icon: Icons.verified_user_outlined,
+      title: 'Leave nothing unclaimed',
+      description:
+          'Give your family clarity, avoid paperwork sprints, and protect generational wealth effortlessly.',
     ),
   ];
 
@@ -39,20 +42,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _nextPage() {
     if (_currentPage < _pages.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOutCubic,
       );
     } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const LoginScreen(),
-        ),
-      );
+      _goToLogin();
     }
   }
 
   void _skipToEnd() {
+    _goToLogin();
+  }
+
+  void _goToLogin() {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -63,34 +65,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            // Skip button
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextButton(
+                  TextButton.icon(
                     onPressed: _skipToEnd,
-                    child: Text(
-                      'Skip',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                      ),
+                    icon: const Icon(Icons.close_rounded),
+                    label: const Text('Skip'),
+                  ),
+                  Chip(
+                    backgroundColor: Theme.of(context).primaryColor.withOpacity(0.08),
+                    label: Text(
+                      '${_currentPage + 1}/${_pages.length}',
+                      style: theme.textTheme.titleSmall,
                     ),
                   ),
                 ],
               ),
             ),
-            
-            // Page content
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
+                physics: const BouncingScrollPhysics(),
                 onPageChanged: (index) {
                   setState(() {
                     _currentPage = index;
@@ -98,48 +102,62 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
                 itemCount: _pages.length,
                 itemBuilder: (context, index) {
+                  final page = _pages[index];
                   return Padding(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Icon
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(60),
+                        Expanded(
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Theme.of(context).dividerColor.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Container(
+                                  width: 64,
+                                  height: 64,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    page.icon,
+                                    size: 32,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                Text(
+                                  page.title,
+                                  style: theme.textTheme.headlineSmall,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  page.description,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                        color: Theme.of(context).hintColor,
+                                        height: 1.6,
+                                      ),
+                                ),
+                                const Spacer(),
+                                LinearProgressIndicator(
+                                  value: (index + 1) / _pages.length,
+                                  color: Theme.of(context).primaryColor,
+                                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                                  minHeight: 5,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ],
+                            ),
                           ),
-                          child: Icon(
-                            _pages[index].icon,
-                            size: 60,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 40),
-                        
-                        // Title
-                        Text(
-                          _pages[index].title,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Description
-                        Text(
-                          _pages[index].description,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.grey[600],
-                            height: 1.5,
-                          ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -147,52 +165,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
               ),
             ),
-            
-            // Progress indicator and navigation
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
               child: Column(
                 children: [
-                  // Progress dots
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
                       _pages.length,
-                      (index) => Container(
+                      (index) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
                         margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: 12,
-                        height: 12,
+                        height: 8,
+                        width: _currentPage == index ? 24 : 8,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
                           color: _currentPage == index
                               ? Theme.of(context).primaryColor
-                              : Colors.grey[300],
+                              : Theme.of(context).primaryColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                       ),
                     ),
                   ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Next/Get Started button
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _nextPage,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                       child: Text(
-                        _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        _currentPage == _pages.length - 1 ? 'Enter ClaimSure' : 'Continue',
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _skipToEnd,
+                    child: const Text('I’ll finish this later'),
                   ),
                 ],
               ),

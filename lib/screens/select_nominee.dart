@@ -22,10 +22,7 @@ class _SelectNomineeScreenState extends State<SelectNomineeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Nominee'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Select Nominee'), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -65,14 +62,19 @@ class _SelectNomineeScreenState extends State<SelectNomineeScreen> {
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    // Save nominee data and return success
-                    Navigator.pop(context, true);
+                    final Map<String, String> nomineeData = {
+                      'username': _nomineeUsernameController.text.trim(),
+                      'relationship': _relationshipController.text.trim(),
+                    };
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Nominee registered successfully!'),
                         backgroundColor: Colors.green,
                       ),
                     );
+
+                    Navigator.pop(context, nomineeData);
                   }
                 },
                 child: const Text('Register Nominee'),

@@ -1,4 +1,4 @@
-import 'package:claim_sure/screens/user_details.dart';
+import 'package:claim_sure/screens/login.dart';
 import 'package:claim_sure/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,7 +13,7 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _fullNameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
+  // final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   bool _agreeToTerms = false;
@@ -22,17 +22,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void dispose() {
     _fullNameController.dispose();
-    _emailController.dispose();
+    // _emailController.dispose();
     _passwordController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
 
   /// Creates a new user account using the API service
-  /// 
+  ///
   /// This method validates the form, calls the API to create a user account,
   /// and handles the response appropriately.
-  /// 
+  ///
   /// **Process:**
   /// 1. Validates all form fields
   /// 2. Checks terms agreement
@@ -45,9 +45,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     if (!_agreeToTerms) {
-      _showErrorMessage('Please agree to the Terms of Service and Privacy Policy');
+      _showErrorMessage(
+        'Please agree to the Terms of Service and Privacy Policy',
+      );
       return;
     }
 
@@ -58,8 +60,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       // Extract username from full name (use first name or full name)
-      final String username = _fullNameController.text.trim().split(' ').first.toLowerCase();
-      
+      final String username = _fullNameController.text;
       // Call API service to create user
       final Map<String, dynamic> result = await ApiService.createUser(
         username: username,
@@ -67,18 +68,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
         password: _passwordController.text,
       );
 
-      // Success: Navigate to user details screen
+      // Success: Navigate to login screen for authentication, then personal details
       if (result['success'] == true) {
-        _showSuccessMessage(result['message'] ?? 'Account created successfully!');
-        
+        _showSuccessMessage(
+          result['message'] ?? 'Account created successfully!',
+        );
+
         // Navigate to user details screen after a brief delay
         await Future.delayed(const Duration(milliseconds: 1500));
-        
+
         if (mounted) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => const UserDetailsScreen(),
+              builder: (context) => const LoginScreen(redirectToDetails: true),
             ),
           );
         }
@@ -88,7 +91,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } catch (e) {
       // Handle errors
       String errorMessage = 'Failed to create account. ';
-      
+
       if (e.toString().contains('Network Error')) {
         errorMessage += 'Please check your internet connection.';
       } else if (e.toString().contains('Server Error')) {
@@ -96,7 +99,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       } else {
         errorMessage += 'Please try again later.';
       }
-      
+
       _showErrorMessage(errorMessage);
       print('❌ Signup Error: $e'); // For debugging
     } finally {
@@ -133,248 +136,289 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-        centerTitle: true,
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Text(
-                  'Create Your Asset Holder Account',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
+                  'Create your secure locker',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
-                const SizedBox(height: 16),
-                
-                // Sub-header
+                const SizedBox(height: 8),
                 Text(
-                  'Your security is our priority. All information is end-to-end encrypted.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                    height: 1.4,
-                  ),
+                  'Set up your ClaimSure account to protect and share your assets with confidence.',
+                  style: theme.textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
-                
                 const SizedBox(height: 32),
-                
-                // Full Name
-                TextFormField(
-                  controller: _fullNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your full name';
-                    }
-                    return null;
-                  },
-                ),
-                
-                // const SizedBox(height: 16),
-                
-                // // Email Address
-                // TextFormField(
-                //   controller: _emailController,
-                //   keyboardType: TextInputType.emailAddress,
-                //   decoration: const InputDecoration(
-                //     labelText: 'Email Address',
-                //     border: OutlineInputBorder(),
-                //     prefixIcon: Icon(Icons.email),
-                //   ),
-                //   validator: (value) {
-                //     if (value == null || value.isEmpty) {
-                //       return 'Please enter your email address';
-                //     }
-                //     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                //     if (!emailRegex.hasMatch(value)) {
-                //       return 'Please enter a valid email address';
-                //     }
-                //     return null;
-                //   },
-                // ),
-                
-                const SizedBox(height: 16),
-                
-                // Password
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Create Password',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                  elevation: 6,
+                  shadowColor: Colors.black.withOpacity(0.08),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 32,
                     ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please create a password';
-                    }
-                    if (value.length < 8) {
-                      return 'Password must be at least 8 characters long';
-                    }
-                    return null;
-                  },
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Phone Number
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.phone),
-                    hintText: 'For two-factor authentication',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your phone number';
-                    }
-                    if (value.length != 10) {
-                      return 'Phone number must be 10 digits';
-                    }
-                    return null;
-                  },
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Terms and Conditions Checkbox
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Checkbox(
-                      value: _agreeToTerms,
-                      onChanged: (value) {
-                        setState(() {
-                          _agreeToTerms = value ?? false;
-                        });
-                      },
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _agreeToTerms = !_agreeToTerms;
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 12.0),
-                          child: RichText(
-                            text: TextSpan(
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Let’s get the essentials',
+                            style: theme.textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'These details help us secure and personalize your experience.',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 24),
+                          TextFormField(
+                            controller: _fullNameController,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(
+                              labelText: 'Full name',
+                              hintText: 'First and last name',
+                              prefixIcon: Icon(Icons.person_outline_rounded),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter your full name';
+                              }
+                              if (value.trim().split(' ').length < 2) {
+                                return 'Please include both first and last name';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          // TextFormField(
+                          //   controller: _emailController,
+                          //   keyboardType: TextInputType.emailAddress,
+                          //   decoration: const InputDecoration(
+                          //     labelText: 'Email address',
+                          //     hintText: 'you@email.com',
+                          //     prefixIcon: Icon(Icons.mail_outline_rounded),
+                          //   ),
+                          //   validator: (value) {
+                          //     if (value == null || value.trim().isEmpty) {
+                          //       return 'Please enter your email address';
+                          //     }
+                          //     const emailRegex = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
+                          //     if (!RegExp(emailRegex).hasMatch(value.trim())) {
+                          //       return 'Please enter a valid email address';
+                          //     }
+                          //     return null;
+                          //   },
+                          // ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: 'Create password',
+                              hintText: 'At least 8 characters',
+                              prefixIcon: const Icon(
+                                Icons.lock_outline_rounded,
                               ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_rounded
+                                      : Icons.visibility_rounded,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please create a password';
+                              }
+                              if (value.length < 8) {
+                                return 'Password must be at least 8 characters';
+                              }
+                              if (!RegExp(
+                                r'^(?=.*[A-Za-z])(?=.*\d)',
+                              ).hasMatch(value)) {
+                                return 'Include at least one letter and one number';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
+                            ],
+                            decoration: const InputDecoration(
+                              labelText: 'Phone number',
+                              hintText: 'For two-factor authentication',
+                              prefixIcon: Icon(Icons.phone_iphone_rounded),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your phone number';
+                              }
+                              if (value.length != 10) {
+                                return 'Phone number must be 10 digits';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).primaryColor.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const TextSpan(text: 'I agree to the '),
-                                TextSpan(
-                                  text: 'Terms of Service',
-                                  style: TextStyle(
-                                    color: Theme.of(context).primaryColor,
-                                    decoration: TextDecoration.underline,
+                                Icon(
+                                  Icons.verified_user_rounded,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Your data is encrypted at rest and in transit. We use bank-grade security and never share details without consent.',
+                                    style: theme.textTheme.bodyMedium,
                                   ),
                                 ),
-                                const TextSpan(text: ' and '),
-                                TextSpan(
-                                  text: 'Privacy Policy',
-                                  style: TextStyle(
-                                    color: Theme.of(context).primaryColor,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                                const TextSpan(text: '.'),
                               ],
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Create Account Button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _createUserAccount,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).colorScheme.onPrimary,
+                          const SizedBox(height: 24),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Checkbox(
+                                value: _agreeToTerms,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _agreeToTerms = value ?? false;
+                                  });
+                                },
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _agreeToTerms = !_agreeToTerms;
+                                    });
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 10),
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: theme.textTheme.bodyMedium,
+                                        children: [
+                                          const TextSpan(
+                                            text:
+                                                'I have read and agree to the ',
+                                          ),
+                                          TextSpan(
+                                            text: 'Terms of Service',
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                                  decoration:
+                                                      TextDecoration.underline,
+                                                ),
+                                          ),
+                                          const TextSpan(text: ' and '),
+                                          TextSpan(
+                                            text: 'Privacy Policy',
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                                  decoration:
+                                                      TextDecoration.underline,
+                                                ),
+                                          ),
+                                          const TextSpan(text: '.'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Creating Account...',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        )
-                      : const Text(
-                          'Create My Secure Account',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            ],
                           ),
-                        ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : _createUserAccount,
+                            child: _isLoading
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text('Creating account...'),
+                                    ],
+                                  )
+                                : const Text('Create my secure account'),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Already have an account? ',
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Sign in'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                
-                const SizedBox(height: 16),
-                
-                // Login link
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Already have an account? Login'),
-                ),
-                
-                const SizedBox(height: 24),
               ],
             ),
           ),

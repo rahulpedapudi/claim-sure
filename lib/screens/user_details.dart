@@ -1,4 +1,5 @@
 import 'package:claim_sure/screens/dashboard.dart';
+import 'package:claim_sure/services/api_service.dart';
 import 'package:flutter/material.dart';
 
 class UserDetailsScreen extends StatefulWidget {
@@ -13,9 +14,23 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
-  
+
   String _selectedSex = 'Male';
-  final List<String> _sexOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
+  final List<String> _sexOptions = [
+    'Male',
+    'Female',
+    'Other',
+    'Prefer not to say',
+  ];
+
+  bool _isLoading = true;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
 
   @override
   void dispose() {
@@ -25,20 +40,110 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     super.dispose();
   }
 
-  void _saveDetails() {
-    if (_formKey.currentState!.validate()) {
-      // Save user details and navigate to dashboard
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const DashboardScreen(),
+  Future<void> _loadProfile() async {
+    try {
+      final result = await ApiService.getProfile();
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        final data = result['data'] as Map<String, dynamic>;
+
+        _nameController.text = (data['fullname'] ?? '') as String;
+        final dynamic ageValue = data['age'];
+        if (ageValue != null) {
+          _ageController.text = ageValue.toString();
+        }
+        _selectedSex = (data['sex'] ?? _selectedSex) as String;
+        _locationController.text = (data['location'] ?? '') as String;
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load profile: $e'),
+          backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _saveDetails() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final int? age = int.tryParse(_ageController.text.trim());
+    if (age == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid age'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final result = await ApiService.updateProfile(
+        fullName: _nameController.text.trim(),
+        age: age,
+        sex: _selectedSex,
+        location: _locationController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Profile updated successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update profile: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Complete Your Profile'),
@@ -62,9 +167,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Sub-header
                 Text(
                   'Help us personalize your ClaimSure experience with a few more details.',
@@ -74,9 +179,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Full Name
                 TextFormField(
                   controller: _nameController,
@@ -96,9 +201,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Age
                 TextFormField(
                   controller: _ageController,
@@ -120,9 +225,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Sex/Gender Dropdown
                 DropdownButtonFormField<String>(
                   value: _selectedSex,
@@ -151,9 +256,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Location
                 TextFormField(
                   controller: _locationController,
@@ -170,29 +275,42 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Save Button
                 ElevatedButton(
-                  onPressed: _saveDetails,
+                  onPressed: _isSubmitting ? null : _saveDetails,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Complete Profile',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: _isSubmitting
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            SizedBox(width: 12),
+                            Text('Saving...'),
+                          ],
+                        )
+                      : const Text(
+                          'Complete Profile',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Info Box
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -221,7 +339,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
               ],
             ),

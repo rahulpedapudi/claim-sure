@@ -9,58 +9,86 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Spacer(flex: 2),
-              
-              // Logo/Icon placeholder
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const OnboardingScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.arrow_forward_rounded),
+                  label: const Text('Skip'),
+                ),
+              ),
+              const Spacer(),
               Container(
-                width: 120,
-                height: 120,
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(60),
+                  color: Theme.of(context).primaryColor.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.security,
-                  size: 60,
+                  Icons.shield_outlined,
                   color: Theme.of(context).primaryColor,
+                  size: 32,
                 ),
               ),
-
-              
-              const SizedBox(height: 40),
-              
-              // Main Header
+              const SizedBox(height: 24),
               Text(
                 'ClaimSure',
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                style: Theme.of(context).textTheme.displayMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).primaryColor,
                 ),
-                textAlign: TextAlign.center,
               ),
-              
-              const SizedBox(height: 16),
-              
-              // Sub-header
+              const SizedBox(height: 12),
               Text(
-                'Ensuring your legacy reaches the right hands.',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.grey[600],
-                  height: 1.4,
+                'Guard every asset, inform every nominee, and leave nothing unclaimed.',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Colors.black.withOpacity(0.65),
+                  height: 1.6,
                 ),
-                textAlign: TextAlign.center,
               ),
-              
-              const Spacer(flex: 3),
-              
-              // Continue Button
+              const SizedBox(height: 32),
+              Container(
+                width: double.infinity,
+                height: 180,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor.withOpacity(0.4),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Trusted vault for modern families',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Store every investment and pass it forward with clarity and confidence.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
+                height: 56,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.push(
@@ -70,23 +98,10 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: const Text('Begin your journey'),
                 ),
               ),
-              
-              const SizedBox(height: 24),
+              const Spacer(),
             ],
           ),
         ),
